@@ -27,6 +27,12 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
+
+# src/app/api/message/route.js
+
+
+
 
 # vercel
 .vercel
