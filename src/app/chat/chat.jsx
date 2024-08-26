@@ -13,8 +13,8 @@ export default function Chat() {
 
   useEffect(() => {
    
-    const pusher = new Pusher('4f3589ae406bc56a0afa', {
-      cluster: 'mt1',
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_APP_KEY, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER,
     });
 
    

@@ -1,10 +1,10 @@
 import Pusher from 'pusher';
 
 const pusher = new Pusher({
-  appId: '1855356',
-  key: '4f3589ae406bc56a0afa',
-  secret: '0364bc1486c2c6396129',
-  cluster: 'mt1',
+  appId: process.env.NEXT_PUBLIC_PUSHER_APP_ID,
+  key: process.env.NEXT_PUBLIC_PUSHER_APP_KEY,
+  secret: process.env.NEXT_PUBLIC_PUSHER_APP_SECRET,
+  cluster: process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER,
   useTLS: true,
 });
 export async function POST(req) {
