@@ -88,8 +88,8 @@ export default function Chat() {
       {messages.map((msg, index) => (
         <div key={index} className={`flex ${msg.name === name ? 'justify-end' : 'justify-start'}`}>
           <div className={`p-3 rounded-lg max-w-xs ${msg.name === name ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-900'}`}>
-            <strong className="block mb-1">{msg.name}</strong>
-            <p>{msg.message}</p>
+            <strong className="block mb-1 ">{msg.name}</strong>
+            <p className='break-words'>{msg.message}</p>
           </div>
         </div>
       ))}
