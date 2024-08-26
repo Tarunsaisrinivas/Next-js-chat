@@ -57,6 +57,7 @@ export default function Chat() {
         });
 
         setNewMessage('');
+        console.log('encryptedMessage', encryptedMessage);
       } catch (error) {
         console.error('Error sending message:', error);
       }
@@ -66,12 +67,20 @@ export default function Chat() {
     }
   };
 
+  const handlelogout = () => {
+    window.location.href = '/';
+    alert('Logged out successfully');
+  };
+
   return (
     <div className="flex flex-col w-2/4 m-auto h-screen bg-gray-100">
    
     <header className="bg-blue-600 text-white p-4 shadow-md">
       <h1 className="text-2xl font-bold text-center">Chat Room</h1>
+      <div className='flex justify-between'>
       <p className="text-center mt-1">Logged in as: <span className="font-semibold">{name}</span></p>
+      <button className='flex justify-end ml-auto bg-red-600 p-2 rounded-xl' onClick={handlelogout}>logout</button>
+      </div>
     </header>
 
     
