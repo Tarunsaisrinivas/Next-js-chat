@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Pusher from 'pusher-js';
 import CryptoJS from 'crypto-js';
 import { useSearchParams } from 'next/navigation';
+import { IoMdLogOut } from "react-icons/io";
 
 export default function Chat() {
   const searchParams = useSearchParams();
@@ -73,13 +74,13 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col w-2/4 m-auto h-screen bg-gray-100">
+    <div className="flex flex-col md:w-2/4 m-auto h-screen bg-gray-100">
    
     <header className="bg-blue-600 text-white p-4 shadow-md">
       <h1 className="text-2xl font-bold text-center">Chat Room</h1>
       <div className='flex justify-between'>
       <p className="text-center mt-1">Logged in as: <span className="font-semibold">{name}</span></p>
-      <button className='flex justify-end ml-auto bg-red-600 p-2 rounded-xl' onClick={handlelogout}>logout</button>
+      <button className='flex justify-end ml-auto bg-red-600 p-2 rounded-xl' onClick={handlelogout}><IoMdLogOut /></button>
       </div>
     </header>
 
