@@ -42,3 +42,7 @@ NEXT_PUBLIC_PUSHER_APP_KEY=ENTER YOUR KEY
 NEXT_PUBLIC_PUSHER_APP_SECRET=ENTER YOUR SECRET
 NEXT_PUBLIC_PUSHER_APP_CLUSTER=ENTER YOUR CLUSTER
 ```
+
+
+To get the  `.env.local` signup into the pusher
+[pusher](https://pusher.com/)
