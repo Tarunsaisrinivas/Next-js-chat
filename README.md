@@ -35,3 +35,10 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 # Next-js-chat
+create an .env.local file containing the following
+``` bash
+NEXT_PUBLIC_PUSHER_APP_ID=ENTER YOUR APPID
+NEXT_PUBLIC_PUSHER_APP_KEY=ENTER YOUR KEY
+NEXT_PUBLIC_PUSHER_APP_SECRET=ENTER YOUR SECRET
+NEXT_PUBLIC_PUSHER_APP_CLUSTER=ENTER YOUR CLUSTER
+```bash
