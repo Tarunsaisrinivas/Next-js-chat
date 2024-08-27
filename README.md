@@ -37,8 +37,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 # Next-js-chat
 create an .env.local file containing the following
 ``` bash
-NEXT_PUBLIC_PUSHER_APP_ID=ENTER YOUR APPID
+NEXT_PUBLIC_PUSHER_APP_ID=ENTER YOUR APP_ID
 NEXT_PUBLIC_PUSHER_APP_KEY=ENTER YOUR KEY
 NEXT_PUBLIC_PUSHER_APP_SECRET=ENTER YOUR SECRET
 NEXT_PUBLIC_PUSHER_APP_CLUSTER=ENTER YOUR CLUSTER
-```bash
+```
