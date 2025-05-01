@@ -10,6 +10,7 @@ export default function Home() {
           <input
             type="text"
             name="name"
+            placeholder="Enter Your Name"
             className="border p-2 w-full mb-4"
             required
           />
