@@ -4,6 +4,7 @@ import Pusher from "pusher-js";
 import CryptoJS from "crypto-js";
 import { useSearchParams } from "next/navigation";
 import { IoMdLogOut } from "react-icons/io";
+import { FiPaperclip, FiDownload, FiX } from "react-icons/fi";
 
 export default function Chat() {
   const searchParams = useSearchParams();
@@ -11,6 +12,7 @@ export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,9 +27,17 @@ export default function Chat() {
           data.message,
           "secret-key"
         ).toString(CryptoJS.enc.Utf8);
+
+        const messageContent = JSON.parse(decrypted);
+
         setMessages((prev) => [
           ...prev,
-          { name: data.name, message: decrypted },
+          {
+            name: data.name,
+            text: messageContent.text,
+            file: messageContent.file,
+            timestamp: new Date(),
+          },
         ]);
       } catch (error) {
         console.error("Error decrypting message:", error);
@@ -39,19 +49,47 @@ export default function Chat() {
     };
   }, []);
 
-  const sendMessage = async () => {
-    if (!newMessage.trim() && !selectedFile) {
-      console.log("No message or file to send"); // Debug log
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only JPG, PNG, and PDF files are allowed");
       return;
     }
 
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size exceeds 5MB limit");
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => setFilePreview(e.target.result);
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() && !selectedFile) return;
+
     setLoading(true);
     try {
-      let messageToSend = "";
-      console.log("Starting send process"); // Debug log
+      let messageContent = {
+        text: newMessage.trim(),
+        file: null,
+      };
 
+      // Handle file upload if present
       if (selectedFile) {
-        console.log("Preparing file upload:", selectedFile.name); // Debug log
         const formData = new FormData();
         formData.append("file", selectedFile);
 
@@ -60,61 +98,58 @@ export default function Chat() {
           body: formData,
         });
 
-        console.log("Upload response status:", uploadResponse.status); // Debug log
-
         if (!uploadResponse.ok) {
           const errorData = await uploadResponse.json();
-          console.error("Upload failed:", errorData); // Debug log
           throw new Error(errorData.error || "File upload failed");
         }
 
-        const data = await uploadResponse.json();
-        console.log("Upload successful:", data.url); // Debug log
-        messageToSend = `File: ${data.url}`;
-        setSelectedFile(null);
-      } else {
-        messageToSend = newMessage;
+        const { url, fileId } = await uploadResponse.json();
+        messageContent.file = {
+          url,
+          fileId,
+          type: selectedFile.type.startsWith("image/") ? "image" : "file",
+          name: selectedFile.name,
+        };
       }
 
-      const encrypted = CryptoJS.AES.encrypt(
-        messageToSend,
-        "secret-key"
-      ).toString();
-      console.log("encryptedMessage", encrypted);
-      console.log("Sending message to chat API"); // Debug log
-      const messageResponse = await fetch("/api/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, message: encrypted }),
-      });
+      // Only send if we have content
+      if (messageContent.text || messageContent.file) {
+        const encrypted = CryptoJS.AES.encrypt(
+          JSON.stringify(messageContent),
+          "secret-key"
+        ).toString();
+        console.log(`User: ${name}, Encrypted Message: ${encrypted}`);
 
-      if (!messageResponse.ok) {
-        throw new Error("Failed to send message");
+        await fetch("/api/message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, message: encrypted }),
+        });
       }
 
-      console.log("Message sent successfully"); // Debug log
+      // Reset inputs
       setNewMessage("");
+      setSelectedFile(null);
+      setFilePreview(null);
     } catch (err) {
-      console.error("Error in sendMessage:", err); // Debug log
-      alert(
-        err.message || "Failed to send message. Check console for details."
-      );
+      console.error("Error in sendMessage:", err);
+      alert(err.message || "Failed to send message");
     } finally {
       setLoading(false);
     }
   };
-  
 
   const handleInputChange = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   };
 
   const handleLogout = () => {
-    alert("Logged out successfully");
-    window.location.href = "/";
+    if (confirm("Are you sure you want to logout?")) {
+      window.location.href = "/";
+    }
   };
 
   return (
@@ -122,7 +157,11 @@ export default function Chat() {
       <header className="bg-blue-600 text-white p-4 shadow-md">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Chat Room</h1>
-          <button className="bg-red-600 p-2 rounded-xl" onClick={handleLogout}>
+          <button
+            className="bg-red-600 p-2 rounded-xl hover:bg-red-700 transition"
+            onClick={handleLogout}
+            title="Logout"
+          >
             <IoMdLogOut />
           </button>
         </div>
@@ -146,46 +185,60 @@ export default function Chat() {
                   : "bg-gray-200 text-gray-900"
               }`}
             >
-              <strong className="block mb-1">{msg.name}</strong>
-              {msg.message.startsWith("File: ") ? (
+              <div className="flex justify-between items-baseline">
+                <strong className="block mb-1">{msg.name}</strong>
+                <span className="text-xs opacity-70 ml-2">
+                  {new Date(msg.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+
+              {/* Text message */}
+              {msg.text && (
+                <p className="break-words whitespace-pre-wrap mb-2">
+                  {msg.text}
+                </p>
+              )}
+
+              {/* File preview */}
+              {msg.file && (
                 <div className="mt-2">
-                  {isImageFile(msg.message) ? (
-                    <img
-                      src={msg.message.replace("File: ", "")}
-                      alt="Uploaded content"
-                      className="max-w-full h-auto rounded-lg"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/file-icon.png";
-                      }}
-                    />
+                  {msg.file.type === "image" ? (
+                    <div className="relative group">
+                      <img
+                        src={msg.file.url}
+                        alt={msg.file.name}
+                        className="max-w-full max-h-64 rounded-lg border border-gray-300"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/file-icon.png";
+                        }}
+                      />
+                      <a
+                        href={msg.file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute bottom-2 right-2 bg-black/50 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        download
+                      >
+                        <FiDownload size={16} />
+                      </a>
+                    </div>
                   ) : (
                     <a
-                      href={msg.message.replace("File: ", "")}
-                      className="inline-flex items-center text-black hover:text-gray-700 underline"
+                      href={msg.file.url}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-800 underline"
                       target="_blank"
                       rel="noopener noreferrer"
+                      download
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 mr-1"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                        />
-                      </svg>
-                      Download File
+                      <FiDownload className="mr-1" />
+                      {msg.file.name}
                     </a>
                   )}
                 </div>
-              ) : (
-                <p className="break-words">{msg.message}</p>
               )}
             </div>
           </div>
@@ -193,34 +246,52 @@ export default function Chat() {
       </div>
 
       <div className="bg-white p-4 shadow-md">
+        {filePreview && (
+          <div className="mb-2 relative">
+            <img
+              src={filePreview}
+              alt="Preview"
+              className="max-h-32 rounded-lg border border-gray-300"
+            />
+            <button
+              onClick={() => {
+                setSelectedFile(null);
+                setFilePreview(null);
+              }}
+              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+            >
+              <FiX size={14} />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center">
           <label className="cursor-pointer mr-2">
             <input
               type="file"
-              onChange={(e) => setSelectedFile(e.target.files[0])}
+              onChange={handleFileChange}
               className="hidden"
               id="fileInput"
+              accept="image/jpeg,image/png,application/pdf"
             />
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-blue-600 hover:text-blue-800"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-              />
-            </svg>
+            <FiPaperclip
+              className="h-6 w-6 text-blue-600 hover:text-blue-800 transition"
+              title="Attach file"
+            />
           </label>
-          {selectedFile && (
-            <span className="text-sm text-gray-600 mr-2 truncate max-w-xs">
-              {selectedFile.name}
-            </span>
+
+          {selectedFile && !filePreview && (
+            <div className="flex items-center text-sm text-gray-600 mr-2 max-w-xs">
+              <span className="truncate">{selectedFile.name}</span>
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="ml-1 text-red-500"
+              >
+                <FiX size={14} />
+              </button>
+            </div>
           )}
+
           <input
             type="text"
             className="flex-1 border border-gray-300 p-3 rounded-lg mr-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -229,32 +300,14 @@ export default function Chat() {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleInputChange}
           />
+
           <button
-            className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition flex items-center justify-center min-w-[80px]"
             onClick={sendMessage}
             disabled={loading}
           >
             {loading ? (
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
+              <span className="inline-block animate-spin">↻</span>
             ) : (
               "Send"
             )}
@@ -263,12 +316,4 @@ export default function Chat() {
       </div>
     </div>
   );
-
-  // Helper function to check if file is an image
-  function isImageFile(message) {
-    if (!message.startsWith("File: ")) return false;
-    const url = message.replace("File: ", "");
-    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-    return imageExtensions.some((ext) => url.toLowerCase().endsWith(ext));
-  }
 }
