@@ -119,7 +119,7 @@ export default function Chat() {
           JSON.stringify(messageContent),
           "secret-key"
         ).toString();
-
+        console.log(`User: ${name}, Encrypted Message: ${encrypted}`);
         await fetch("/api/message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
