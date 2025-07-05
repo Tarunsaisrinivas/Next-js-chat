@@ -1,5 +1,12 @@
+// app/api/upload/route.js
 import { NextResponse } from "next/server";
-import imagekit from "../../lib/imagekit";
+import ImageKit from "imagekit";
+
+const imagekit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+});
 
 export const dynamic = "force-dynamic";
 
@@ -12,32 +19,9 @@ export async function POST(request) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // ===== VALIDATION SECTION =====
-    // Check file type
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Unsupported file type. Only JPG, PNG, and PDF are allowed." },
-        { status: 415 }
-      );
-    }
-
-    // Check file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: "File size exceeds 5MB limit" },
-        { status: 413 }
-      );
-    }
-    // ===== END VALIDATION =====
-
-    // Convert file to buffer
     const buffer = await file.arrayBuffer();
-    const fileBuffer = Buffer.from(buffer);
-
-    // Upload to ImageKit
     const response = await imagekit.upload({
-      file: fileBuffer,
+      file: Buffer.from(buffer),
       fileName: `${Date.now()}-${file.name}`,
       folder: "/chat-uploads",
     });

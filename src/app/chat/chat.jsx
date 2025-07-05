@@ -5,6 +5,7 @@ import CryptoJS from "crypto-js";
 import { useSearchParams } from "next/navigation";
 import { IoMdLogOut } from "react-icons/io";
 import { FiPaperclip, FiDownload, FiX } from "react-icons/fi";
+import Image from "next/image";
 
 export default function Chat() {
   const searchParams = useSearchParams();
@@ -118,7 +119,6 @@ export default function Chat() {
           JSON.stringify(messageContent),
           "secret-key"
         ).toString();
-        console.log(`User: ${name}, Encrypted Message: ${encrypted}`);
 
         await fetch("/api/message", {
           method: "POST",
@@ -207,15 +207,19 @@ export default function Chat() {
                 <div className="mt-2">
                   {msg.file.type === "image" ? (
                     <div className="relative group">
-                      <img
-                        src={msg.file.url}
-                        alt={msg.file.name}
-                        className="max-w-full max-h-64 rounded-lg border border-gray-300"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/file-icon.png";
-                        }}
-                      />
+                      <div className="relative w-full h-64">
+                        <Image
+                          src={msg.file.url}
+                          alt={msg.file.name}
+                          fill
+                          className="object-contain rounded-lg border border-gray-300"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/file-icon.png";
+                          }}
+                          unoptimized={true}
+                        />
+                      </div>
                       <a
                         href={msg.file.url}
                         target="_blank"
@@ -229,7 +233,7 @@ export default function Chat() {
                   ) : (
                     <a
                       href={msg.file.url}
-                      className="inline-flex items-center text-blue-600 hover:text-blue-800 underline"
+                      className="inline-flex items-center text-black  hover:text-gray-700 underline"
                       target="_blank"
                       rel="noopener noreferrer"
                       download
@@ -247,11 +251,13 @@ export default function Chat() {
 
       <div className="bg-white p-4 shadow-md">
         {filePreview && (
-          <div className="mb-2 relative">
-            <img
+          <div className="mb-2 relative h-32">
+            <Image
               src={filePreview}
               alt="Preview"
-              className="max-h-32 rounded-lg border border-gray-300"
+              fill
+              className="object-contain rounded-lg border border-gray-300"
+              unoptimized={true}
             />
             <button
               onClick={() => {
