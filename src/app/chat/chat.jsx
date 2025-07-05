@@ -162,7 +162,7 @@ export default function Chat() {
                   ) : (
                     <a
                       href={msg.message.replace("File: ", "")}
-                      className="inline-flex items-center text-blue-200 hover:text-blue-100 underline"
+                      className="inline-flex items-center text-black hover:text-gray-700 underline"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
